@@ -55,9 +55,7 @@ with app.app_context():
     db.create_all()
     logger.debug("Database tables created")
 
-# Import and register routes
-from routes import register_routes
-register_routes(app)
+# Routes will be registered in main.py
 
 @login_manager.user_loader
 def load_user(user_id):
