@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - DSSE Tool{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Your Dashboard</h1>
+            <p class="lead">Manage your encrypted data</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('encrypt') }}" class="btn btn-primary">
+                <i class="fas fa-lock me-1"></i> Encrypt New Data
+            </a>
+        </div>
+    </div>
+    
+    {% if recent_master_key %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Important: Save Your Master Key!</h4>
+                <p>You've just encrypted: <strong>{{ recent_data_info.input_type }}{% if recent_data_info.filename %}: {{ recent_data_info.filename }}{% endif %}</strong></p>
+                <hr>
+                <p class="mb-0">Your master key is shown below. Save it securely - it <strong>cannot</strong> be recovered if lost!</p>
+                <div class="input-group mt-2">
+                    <input type="text" class="form-control font-monospace" id="masterKeyDisplay" value="{{ recent_master_key }}" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copyMasterKey()">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                <small class="text-muted mt-2 d-block">This key will only be shown once. We recommend storing it in a secure password manager.</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col">
+            <div class="card shadow">
+                <div class="card-header bg-dark">
+                    <h5 class="mb-0">Your Encrypted Data</h5>
+                </div>
+                <div class="card-body">
+                    {% if encrypted_data %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Name</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in encrypted_data %}
+                                <tr>
+                                    <td>
+                                        {% if data.input_type == 'text' %}
+                                        <span class="badge bg-info"><i class="fas fa-font me-1"></i> Text</span>
+                                        {% elif data.input_type == 'txt' %}
+                                        <span class="badge bg-secondary"><i class="fas fa-file-alt me-1"></i> TXT</span>
+                                        {% elif data.input_type == 'pdf' %}
+                                        <span class="badge bg-danger"><i class="fas fa-file-pdf me-1"></i> PDF</span>
+                                        {% elif data.input_type == 'voice' %}
+                                        <span class="badge bg-success"><i class="fas fa-microphone me-1"></i> Voice</span>
+                                        {% else %}
+                                        <span class="badge bg-dark"><i class="fas fa-file me-1"></i> {{ data.input_type }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ data.original_filename or 'Unnamed' }}</td>
+                                    <td>{{ data.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('decrypt') }}?data_id={{ data.id }}" class="btn btn-outline-primary">
+                                                <i class="fas fa-unlock-alt"></i> Decrypt
+                                            </a>
+                                            <a href="{{ url_for('search') }}?data_id={{ data.id }}" class="btn btn-outline-secondary">
+                                                <i class="fas fa-search"></i> Search
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ data.id }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="deleteModal{{ data.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ data.id }}" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="deleteModalLabel{{ data.id }}">Confirm Deletion</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Are you sure you want to delete this encrypted data? This action cannot be undone.
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <form action="{{ url_for('delete_data', data_id=data.id) }}" method="POST">
+                                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-lock fa-3x mb-3 text-muted"></i>
+                        <p class="lead">You don't have any encrypted data yet</p>
+                        <a href="{{ url_for('encrypt') }}" class="btn btn-primary mt-2">
+                            <i class="fas fa-lock me-1"></i> Encrypt your first data
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyMasterKey() {
+    var copyText = document.getElementById("masterKeyDisplay");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); /* For mobile devices */
+    document.execCommand("copy");
+    
+    // Change button text temporarily
+    var button = copyText.nextElementSibling;
+    var originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    
+    setTimeout(function() {
+        button.innerHTML = originalHTML;
+    }, 2000);
+}
+</script>
+{% endblock %}

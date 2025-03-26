@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Search Encrypted Data - DSSE Tool{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Search Encrypted Data</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.data_id.label(class="form-label") }}
+                            {% if form.data_id.choices %}
+                                {{ form.data_id(class="form-select") }}
+                            {% else %}
+                                <select class="form-select" disabled>
+                                    <option>No encrypted data available</option>
+                                </select>
+                                <small class="form-text text-muted">You need to encrypt some data first.</small>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.search_term.label(class="form-label") }}
+                            {{ form.search_term(class="form-control", placeholder="Enter keyword to search for...") }}
+                            <small class="form-text text-muted">Enter a word or phrase to search for in the encrypted content.</small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if results %}
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Search Results</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p class="mb-0">
+                            <strong>{{ results.count }}</strong> occurence(s) of "<strong>{{ results.term }}</strong>"
+                            found in {% if results.filename %}<strong>{{ results.filename }}</strong>{% else %}your data{% endif %}.
+                        </p>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <p>To view the actual content, you need to <a href="{{ url_for('decrypt') }}">decrypt</a> the data using your master key.</p>
+                        
+                        <div class="text-muted">
+                            <p><small>Positions where the term appears: {{ results.positions|join(', ') }}</small></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Decrypt Data - DSSE Tool{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Decrypt Data</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.data_id.label(class="form-label") }}
+                            {% if form.data_id.choices %}
+                                {{ form.data_id(class="form-select") }}
+                            {% else %}
+                                <select class="form-select" disabled>
+                                    <option>No encrypted data available</option>
+                                </select>
+                                <small class="form-text text-muted">You need to encrypt some data first.</small>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.master_key.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.master_key(class="form-control font-monospace", placeholder="Paste your master key here") }}
+                                <button class="btn btn-outline-secondary" type="button" id="pasteButton">
+                                    <i class="fas fa-paste"></i> Paste
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">This is the key that was provided to you when you encrypted the data.</small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if decrypted_text is defined %}
+            <div class="card shadow">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Decrypted Content</h4>
+                    <div>
+                        <form action="{{ url_for('download_decrypted', data_id=request.form.get('data_id')) }}" method="POST" class="d-inline">
+                            <input type="hidden" name="master_key" value="{{ request.form.get('master_key') }}">
+                            <button type="submit" class="btn btn-sm btn-light">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if data_type == 'voice' and is_transcription_error %}
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Transcription Issue</h5>
+                        <p>There was an issue with the voice transcription:</p>
+                        <p class="mb-0">{{ decrypted_text }}</p>
+                    </div>
+                    {% else %}
+                    <div class="p-3 bg-light rounded">
+                        {% if filename %}
+                        <div class="mb-2">
+                            <span class="badge bg-secondary">{{ filename }}</span>
+                            {% if data_type == 'voice' %}
+                            <span class="badge bg-info">Transcribed Voice</span>
+                            {% elif data_type == 'pdf' %}
+                            <span class="badge bg-danger">PDF Text</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="decrypt-content">
+                            {{ decrypted_text|nl2br }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle paste button
+    const pasteButton = document.getElementById('pasteButton');
+    const masterKeyInput = document.getElementById('master_key');
+    
+    if (pasteButton && masterKeyInput) {
+        pasteButton.addEventListener('click', async function() {
+            try {
+                const text = await navigator.clipboard.readText();
+                masterKeyInput.value = text;
+            } catch (err) {
+                console.error('Failed to read clipboard contents: ', err);
+                alert('Unable to access clipboard. Please paste the key manually.');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
