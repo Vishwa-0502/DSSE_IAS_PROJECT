@@ -80,6 +80,9 @@
                                             <a href="{{ url_for('search') }}?data_id={{ data.id }}" class="btn btn-outline-secondary">
                                                 <i class="fas fa-search"></i> Search
                                             </a>
+                                            <a href="{{ url_for('update') }}?data_id={{ data.id }}" class="btn btn-outline-info">
+                                                <i class="fas fa-edit"></i> Update
+                                            </a>
                                             <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ data.id }}">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>

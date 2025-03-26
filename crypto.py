@@ -295,8 +295,23 @@ class DSSE:
     def update(self, old_encrypted_data, new_plaintext, master_key):
         """
         Update encrypted data with new content while preserving the master key.
+        
+        Args:
+            old_encrypted_data (EncryptedData): The original encrypted data object
+            new_plaintext (str or bytes): The new content to encrypt
+            master_key (bytes): The master encryption key
+            
+        Returns:
+            tuple: (encrypted_content, search_index_json, nonce)
         """
-        # Derive search key from master key
+        # First verify the master key by attempting to decrypt the old content
+        try:
+            self.decrypt(old_encrypted_data.encrypted_content, old_encrypted_data.iv, master_key)
+        except Exception as e:
+            logger.error(f"Master key verification failed during update: {str(e)}")
+            raise ValueError("Invalid master key. Please provide the correct master key for this data.")
+            
+        # Derive search key - we'll generate a new one to maintain security
         search_key = self._derive_search_key(master_key)
         
         # Convert new plaintext to bytes if it's a string
@@ -312,4 +327,6 @@ class DSSE:
         # Convert search index to JSON string
         search_index_json = json.dumps(search_index)
         
-        return encrypted_content, search_index_json, nonce
+        logger.debug(f"Updated encrypted data: {len(new_plaintext)} bytes -> {len(encrypted_content)} bytes")
+        
+        return encrypted_content, search_index_json, nonce, search_key

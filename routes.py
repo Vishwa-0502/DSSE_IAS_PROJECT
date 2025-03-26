@@ -452,6 +452,13 @@ def register_routes(app):
         form.data_id.choices = [(data.id, f"{data.input_type}: {data.original_filename or 'Unnamed'} ({data.created_at.strftime('%Y-%m-%d %H:%M')})") 
                                for data in user_data]
         
+        # Check if data_id was passed in URL (from dashboard)
+        data_id = request.args.get('data_id', type=int)
+        if data_id and form.data_id.choices:
+            # Check if the data_id exists in the choices
+            if any(choice[0] == data_id for choice in form.data_id.choices):
+                form.data_id.data = data_id
+        
         if not user_data:
             flash('You have no encrypted data to update. Please encrypt some data first.', 'info')
             return render_template('update.html', form=form)
@@ -492,7 +499,7 @@ def register_routes(app):
                 content, original_filename = process_input(input_type, text_input, file_input)
                 
                 # Update the encrypted data
-                encrypted_content, search_index, iv = dsse.update(
+                encrypted_content, search_index, iv, search_key = dsse.update(
                     encrypted_data, content, master_key
                 )
                 
@@ -500,6 +507,7 @@ def register_routes(app):
                 encrypted_data.encrypted_content = encrypted_content
                 encrypted_data.search_index = search_index
                 encrypted_data.iv = iv
+                encrypted_data.search_key = search_key
                 encrypted_data.input_type = input_type
                 if original_filename:
                     encrypted_data.original_filename = original_filename
